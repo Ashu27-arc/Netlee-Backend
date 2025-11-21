@@ -62,23 +62,42 @@ export const searchTMDB = async (req, res) => {
 };
 
 // --------------------------------------
-// MIXED HOME FEED (Local + TMDB)
+// MIXED HOME FEED (Local + TMDB) - ALL DATA IN ONE CALL
 // --------------------------------------
 export const getHomeFeed = async (req, res) => {
     try {
-        const local = await Movie.find().sort({
-            createdAt: -1
-        }).limit(10);
+        console.log("Fetching all home feed data...");
 
-        const tmdbTrending = await axios.get(
-            `${TMDB_URL}/trending/movie/day?api_key=${process.env.TMDB_API_KEY}`
-        );
+        // Fetch one page from each TMDB category - all in one parallel call
+        const [local, trending, popular, topRated, upcoming] = await Promise.all([
+            Movie.find().sort({
+                createdAt: -1
+            }).limit(10),
+            axios.get(`${TMDB_URL}/trending/movie/day?api_key=${process.env.TMDB_API_KEY}`),
+            axios.get(`${TMDB_URL}/movie/popular?api_key=${process.env.TMDB_API_KEY}`),
+            axios.get(`${TMDB_URL}/movie/top_rated?api_key=${process.env.TMDB_API_KEY}`),
+            axios.get(`${TMDB_URL}/movie/upcoming?api_key=${process.env.TMDB_API_KEY}`)
+        ]);
 
-        res.json({
+        const response = {
             local,
-            trending: tmdbTrending.data.results,
+            trending: trending.data.results || [],
+            popular: popular.data.results || [],
+            topRated: topRated.data.results || [],
+            upcoming: upcoming.data.results || []
+        };
+
+        console.log("Home feed data fetched successfully:", {
+            local: response.local.length,
+            trending: response.trending.length,
+            popular: response.popular.length,
+            topRated: response.topRated.length,
+            upcoming: response.upcoming.length
         });
+
+        res.json(response);
     } catch (e) {
+        console.error("Error fetching home feed:", e.message);
         res.status(500).json({
             error: e.message
         });
