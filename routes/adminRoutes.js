@@ -1,6 +1,7 @@
 import express from "express";
 import {
-    protect
+    protect,
+    adminOnly
 } from "../middleware/authMiddleware.js";
 import {
     uploadMovie,
@@ -8,6 +9,10 @@ import {
     deleteMovie,
     addTMDBMovieVideo,
     getAllTMDBMovies,
+    deleteTMDBMovie,
+    getAllUsers,
+    deleteUser,
+    updateUserRole,
 } from "../controllers/adminController.js";
 
 import {
@@ -21,6 +26,7 @@ const router = express.Router();
 router.post(
     "/upload",
     protect,
+    adminOnly,
     uploadVideo.fields([{
         name: "video",
         maxCount: 1
@@ -32,16 +38,24 @@ router.post(
     uploadMovie
 );
 
-// Get all movies
-router.get("/movies", protect, getAllMovies);
+// Get all movies (Admin only)
+router.get("/movies", protect, adminOnly, getAllMovies);
 
-// Delete movie
-router.delete("/movie/:id", protect, deleteMovie);
+// Delete movie (Admin only)
+router.delete("/movie/:id", protect, adminOnly, deleteMovie);
 
-// Add/Update TMDB movie video URL
-router.post("/tmdb-movie/video", protect, addTMDBMovieVideo);
+// Add/Update TMDB movie video URL (Admin only)
+router.post("/tmdb-movie/video", protect, adminOnly, addTMDBMovieVideo);
 
-// Get all TMDB movies with videos
-router.get("/tmdb-movies", protect, getAllTMDBMovies);
+// Get all TMDB movies with videos (Admin only)
+router.get("/tmdb-movies", protect, adminOnly, getAllTMDBMovies);
+
+// Delete TMDB movie video (Admin only)
+router.delete("/tmdb-movie/:id", protect, adminOnly, deleteTMDBMovie);
+
+// User Management Routes (Admin only)
+router.get("/users", protect, adminOnly, getAllUsers);
+router.delete("/user/:id", protect, adminOnly, deleteUser);
+router.put("/user/:id/role", protect, adminOnly, updateUserRole);
 
 export default router;

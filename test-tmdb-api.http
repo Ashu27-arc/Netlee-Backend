@@ -1,0 +1,50 @@
+### TMDB Movie Video API Testing
+### Use this file with REST Client extension in VS Code or copy to Postman
+
+@baseUrl = http://localhost:5000
+@token = YOUR_JWT_TOKEN_HERE
+
+### 1. Login First (Get Token)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "your-email@example.com",
+  "password": "your-password"
+}
+
+### 2. Add TMDB Movie Video URL (Sample - Big Buck Bunny)
+POST {{baseUrl}}/api/admin/tmdb-movie/video
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "tmdbId": 278,
+  "title": "The Shawshank Redemption (Test)",
+  "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  "source": "external"
+}
+
+### 3. Add Another Movie (Elephant Dream)
+POST {{baseUrl}}/api/admin/tmdb-movie/video
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "tmdbId": 550,
+  "title": "Fight Club (Test)",
+  "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+  "source": "external"
+}
+
+### 4. Get All TMDB Movies with Videos
+GET {{baseUrl}}/api/admin/tmdb-movies
+Authorization: Bearer {{token}}
+
+### 5. Get Specific TMDB Movie Details (Check if hasFullMovie is true)
+GET {{baseUrl}}/api/movies/tmdb/278
+Authorization: Bearer {{token}}
+
+### 6. Delete TMDB Movie Video (Replace MONGODB_ID with actual _id)
+DELETE {{baseUrl}}/api/admin/tmdb-movie/MONGODB_ID
+Authorization: Bearer {{token}}

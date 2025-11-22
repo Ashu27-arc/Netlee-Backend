@@ -1,0 +1,128 @@
+{
+    "info": {
+        "name": "Netlee - TMDB Movie Video API",
+        "description": "API collection for adding full movie videos to TMDB movies",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [{
+            "key": "baseUrl",
+            "value": "http://localhost:5000",
+            "type": "string"
+        },
+        {
+            "key": "token",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [{
+            "name": "1. Login (Get Token)",
+            "event": [{
+                "listen": "test",
+                "script": {
+                    "exec": [
+                        "if (pm.response.code === 200) {",
+                        "    const response = pm.response.json();",
+                        "    pm.collectionVariables.set('token', response.token);",
+                        "    console.log('Token saved:', response.token);",
+                        "}"
+                    ],
+                    "type": "text/javascript"
+                }
+            }],
+            "request": {
+                "method": "POST",
+                "header": [{
+                    "key": "Content-Type",
+                    "value": "application/json"
+                }],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"email\": \"your-email@example.com\",\n  \"password\": \"your-password\"\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/auth/login",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "auth", "login"]
+                }
+            }
+        },
+        {
+            "name": "2. Add TMDB Movie Video",
+            "request": {
+                "method": "POST",
+                "header": [{
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"tmdbId\": 278,\n  \"title\": \"The Shawshank Redemption\",\n  \"videoUrl\": \"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4\",\n  \"source\": \"external\"\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/admin/tmdb-movie/video",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "admin", "tmdb-movie", "video"]
+                },
+                "description": "Add or update full movie video URL for a TMDB movie"
+            }
+        },
+        {
+            "name": "3. Get All TMDB Movies",
+            "request": {
+                "method": "GET",
+                "header": [{
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                }],
+                "url": {
+                    "raw": "{{baseUrl}}/api/admin/tmdb-movies",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "admin", "tmdb-movies"]
+                },
+                "description": "Get all TMDB movies with video URLs from database"
+            }
+        },
+        {
+            "name": "4. Get TMDB Movie Details",
+            "request": {
+                "method": "GET",
+                "header": [{
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                }],
+                "url": {
+                    "raw": "{{baseUrl}}/api/movies/tmdb/278",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "movies", "tmdb", "278"]
+                },
+                "description": "Get TMDB movie details - check if hasFullMovie is true"
+            }
+        },
+        {
+            "name": "5. Delete TMDB Movie Video",
+            "request": {
+                "method": "DELETE",
+                "header": [{
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                }],
+                "url": {
+                    "raw": "{{baseUrl}}/api/admin/tmdb-movie/:id",
+                    "host": ["{{baseUrl}}"],
+                    "path": ["api", "admin", "tmdb-movie", ":id"],
+                    "variable": [{
+                        "key": "id",
+                        "value": "MONGODB_ID_HERE"
+                    }]
+                },
+                "description": "Delete TMDB movie video entry from database"
+            }
+        }
+    ]
+}

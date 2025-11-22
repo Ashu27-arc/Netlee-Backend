@@ -1,6 +1,7 @@
 import Movie from "../models/Movie.js";
 import TMDBMovie from "../models/TMDBMovie.js";
 import cloudinary from "../config/cloudinary.js";
+import User from "../models/User.js";
 
 // ---------- Upload Movie ----------
 export const uploadMovie = async (req, res) => {
@@ -73,7 +74,13 @@ export const deleteMovie = async (req, res) => {
 // ---------- Add/Update TMDB Movie Video URL ----------
 export const addTMDBMovieVideo = async (req, res) => {
     try {
-        const { tmdbId, title, videoUrl, hlsUrl, source } = req.body;
+        const {
+            tmdbId,
+            title,
+            videoUrl,
+            hlsUrl,
+            source
+        } = req.body;
 
         if (!tmdbId || !videoUrl) {
             return res.status(400).json({
@@ -82,17 +89,18 @@ export const addTMDBMovieVideo = async (req, res) => {
         }
 
         // Find or create TMDB movie entry
-        const tmdbMovie = await TMDBMovie.findOneAndUpdate(
-            { tmdbId: parseInt(tmdbId) },
-            {
-                tmdbId: parseInt(tmdbId),
-                title: title || `TMDB Movie ${tmdbId}`,
-                videoUrl,
-                hlsUrl: hlsUrl || null,
-                source: source || 'external'
-            },
-            { upsert: true, new: true }
-        );
+        const tmdbMovie = await TMDBMovie.findOneAndUpdate({
+            tmdbId: parseInt(tmdbId)
+        }, {
+            tmdbId: parseInt(tmdbId),
+            title: title || `TMDB Movie ${tmdbId}`,
+            videoUrl,
+            hlsUrl: hlsUrl || null,
+            source: source || 'external'
+        }, {
+            upsert: true,
+            new: true
+        });
 
         res.json({
             message: "TMDB movie video URL added/updated",
@@ -109,10 +117,140 @@ export const addTMDBMovieVideo = async (req, res) => {
 // ---------- Get All TMDB Movies with Videos ----------
 export const getAllTMDBMovies = async (req, res) => {
     try {
-        const tmdbMovies = await TMDBMovie.find().sort({ createdAt: -1 });
+        const tmdbMovies = await TMDBMovie.find().sort({
+            createdAt: -1
+        });
         res.json(tmdbMovies || []);
     } catch (e) {
         console.error("Error fetching TMDB movies:", e.message);
+        res.status(500).json({
+            error: e.message
+        });
+    }
+};
+
+// ---------- Delete TMDB Movie Video ----------
+export const deleteTMDBMovie = async (req, res) => {
+    try {
+        const {
+            id
+        } = req.params;
+        const tmdbMovie = await TMDBMovie.findByIdAndDelete(id);
+
+        if (!tmdbMovie) {
+            return res.status(404).json({
+                message: "TMDB movie not found"
+            });
+        }
+
+        res.json({
+            message: "TMDB movie deleted successfully",
+            tmdbMovie
+        });
+    } catch (e) {
+        console.error("Error deleting TMDB movie:", e.message);
+        res.status(500).json({
+            error: e.message
+        });
+    }
+};
+
+// ---------- Get All Users ----------
+export const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find().select("-password").sort({
+            createdAt: -1
+        });
+        res.json(users);
+    } catch (e) {
+        console.error("Error fetching users:", e.message);
+        res.status(500).json({
+            error: e.message
+        });
+    }
+};
+
+// ---------- Delete User ----------
+export const deleteUser = async (req, res) => {
+    try {
+        const {
+            id
+        } = req.params;
+
+        // Prevent admin from deleting themselves
+        if (req.user._id.toString() === id) {
+            return res.status(400).json({
+                message: "You cannot delete your own account"
+            });
+        }
+
+        const user = await User.findByIdAndDelete(id);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+
+        res.json({
+            message: "User deleted successfully",
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email
+            }
+        });
+    } catch (e) {
+        console.error("Error deleting user:", e.message);
+        res.status(500).json({
+            error: e.message
+        });
+    }
+};
+
+// ---------- Update User Role ----------
+export const updateUserRole = async (req, res) => {
+    try {
+        const {
+            id
+        } = req.params;
+        const {
+            role
+        } = req.body;
+
+        if (!role || !['user', 'admin'].includes(role)) {
+            return res.status(400).json({
+                message: "Invalid role. Must be 'user' or 'admin'"
+            });
+        }
+
+        // Prevent admin from changing their own role
+        if (req.user._id.toString() === id) {
+            return res.status(400).json({
+                message: "You cannot change your own role"
+            });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            id, {
+                role
+            }, {
+                new: true
+            }
+        ).select("-password");
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+
+        res.json({
+            message: "User role updated successfully",
+            user
+        });
+    } catch (e) {
+        console.error("Error updating user role:", e.message);
         res.status(500).json({
             error: e.message
         });
