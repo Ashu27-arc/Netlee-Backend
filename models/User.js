@@ -18,9 +18,15 @@ const userSchema = new mongoose.Schema({
     },
     avatar: {
         type: String
-    }
+    },
+    favorites: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Movie"
+    }],
+
 }, {
     timestamps: true
 });
+
 
 export default mongoose.model("User", userSchema);

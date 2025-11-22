@@ -1,5 +1,6 @@
 import axios from "axios";
 import Movie from "../models/Movie.js";
+import User from "../models/User.js";
 
 const TMDB_URL = "https://api.themoviedb.org/3";
 
@@ -177,4 +178,30 @@ export const getUpcomingMovies = async (req, res) => {
             error: e.message
         });
     }
+};
+
+// 🩶❤️ TOGGLE FAVORITE
+export const toggleFavorite = async (req, res) => {
+    const movieId = req.params.id;
+    const user = await User.findById(req.user._id);
+
+    const exists = user.favorites.includes(movieId);
+
+    if (exists) {
+        user.favorites = user.favorites.filter((id) => id !== movieId);
+    } else {
+        user.favorites.push(movieId);
+    }
+
+    await user.save();
+
+    res.json({
+        favorites: user.favorites
+    });
+};
+
+// 💖 GET MY FAVORITES MOVIES
+export const getFavorites = async (req, res) => {
+    const user = await User.findById(req.user._id).populate("favorites");
+    res.json(user.favorites);
 };
