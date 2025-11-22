@@ -1,4 +1,5 @@
 import Movie from "../models/Movie.js";
+import TMDBMovie from "../models/TMDBMovie.js";
 import cloudinary from "../config/cloudinary.js";
 
 // ---------- Upload Movie ----------
@@ -67,4 +68,53 @@ export const deleteMovie = async (req, res) => {
     res.json({
         message: "Deleted"
     });
+};
+
+// ---------- Add/Update TMDB Movie Video URL ----------
+export const addTMDBMovieVideo = async (req, res) => {
+    try {
+        const { tmdbId, title, videoUrl, hlsUrl, source } = req.body;
+
+        if (!tmdbId || !videoUrl) {
+            return res.status(400).json({
+                error: "TMDB ID and video URL are required"
+            });
+        }
+
+        // Find or create TMDB movie entry
+        const tmdbMovie = await TMDBMovie.findOneAndUpdate(
+            { tmdbId: parseInt(tmdbId) },
+            {
+                tmdbId: parseInt(tmdbId),
+                title: title || `TMDB Movie ${tmdbId}`,
+                videoUrl,
+                hlsUrl: hlsUrl || null,
+                source: source || 'external'
+            },
+            { upsert: true, new: true }
+        );
+
+        res.json({
+            message: "TMDB movie video URL added/updated",
+            tmdbMovie
+        });
+    } catch (e) {
+        console.error("Error adding TMDB movie video:", e.message);
+        res.status(500).json({
+            error: e.message
+        });
+    }
+};
+
+// ---------- Get All TMDB Movies with Videos ----------
+export const getAllTMDBMovies = async (req, res) => {
+    try {
+        const tmdbMovies = await TMDBMovie.find().sort({ createdAt: -1 });
+        res.json(tmdbMovies || []);
+    } catch (e) {
+        console.error("Error fetching TMDB movies:", e.message);
+        res.status(500).json({
+            error: e.message
+        });
+    }
 };
