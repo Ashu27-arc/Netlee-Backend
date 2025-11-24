@@ -656,7 +656,7 @@ Testing ke liye Postman collection available hai:
 
 ---
 
-**Backend URL**: `https://your-backend-url.com`  
-**Status**: ✅ Ready to Deploy
+**Backend URL**: `https://netlee-backend.onrender.com`  
+**Status**: ✅ Deployed & Live on Render
 
 *Koi bhi issue ho to GitHub Issues me post karein!*
