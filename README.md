@@ -1,6 +1,6 @@
-# 🚀 Netlee Backend - Deployment Guide
+# 🚀 Netlee Backend - Complete Documentation
 
-Express.js + MongoDB backend API ka complete deployment guide.
+Express.js + MongoDB backend API ka complete guide - deployment, TMDB integration, aur full movie features.
 
 ---
 
@@ -10,9 +10,9 @@ Express.js + MongoDB backend API ka complete deployment guide.
 2. [Prerequisites](#prerequisites)
 3. [Local Setup](#local-setup)
 4. [Environment Variables](#environment-variables)
-5. [Deployment Options](#deployment-options)
-6. [Step-by-Step Deployment](#step-by-step-deployment)
-7. [Post-Deployment](#post-deployment)
+5. [TMDB Full Movie Feature](#tmdb-full-movie-feature)
+6. [API Endpoints](#api-endpoints)
+7. [Deployment Guide](#deployment-guide)
 8. [Troubleshooting](#troubleshooting)
 
 ---
@@ -21,7 +21,8 @@ Express.js + MongoDB backend API ka complete deployment guide.
 
 Yeh backend API streaming platform ke liye banaya gaya hai jo provide karta hai:
 - User Authentication (Login/Register)
-- Movie Management
+- Movie Management (Local + TMDB)
+- TMDB Full Movie Video URLs
 - Admin Operations
 - Media Upload (Cloudinary integration)
 
@@ -31,12 +32,13 @@ Yeh backend API streaming platform ke liye banaya gaya hai jo provide karta hai:
 - JWT Authentication
 - Cloudinary (Media Storage)
 - Passport.js (OAuth)
+- TMDB API Integration
 
 ---
 
 ## 🔧 Prerequisites
 
-Deployment se pehle ensure karein:
+Setup se pehle ensure karein:
 
 - ✅ Node.js v18+ installed
 - ✅ MongoDB Atlas account (free tier available)
@@ -85,7 +87,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 1. [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) par account banao
 2. Free cluster create karo
 3. Database user banao
-4. Network Access me `0.0.0.0/0` add karo (all IPs allow)
+4. **Network Access me `0.0.0.0/0` add karo** (all IPs allow) - Ye bahut important hai!
 5. Connection string copy karo aur `.env` me `MONGO_URI` me paste karo
 
 ### 4. Cloudinary Setup
@@ -109,7 +111,179 @@ Server `http://localhost:5000` par start ho jayega.
 
 ---
 
-## 🌐 Deployment Options
+## 🎬 TMDB Full Movie Feature
+
+### ✅ Kya Ready Hai
+
+"Play Full Movie" button already app mein implemented hai! Bas video URLs add karne hain.
+
+### 🚀 Quick Start Guide
+
+#### Step 1: Server Start Karo
+```bash
+cd Netlee-Backend
+npm start
+```
+
+#### Step 2: Login Karke Token Lo
+
+**Request:**
+```bash
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"your-email@example.com","password":"your-password"}'
+```
+
+**Response:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": { ... }
+}
+```
+
+**Token copy karo!** Ye har API call mein chahiye.
+
+#### Step 3: TMDB Movie ID Dhundo
+
+**Mobile App mein:**
+1. Koi bhi TMDB movie open karo
+2. URL dekho: `/player?id=550&type=tmdb`
+3. Yahan `550` TMDB ID hai
+
+**Ya TMDB website se:**
+- https://www.themoviedb.org/movie/550 → ID = 550
+- https://www.themoviedb.org/movie/278 → ID = 278
+
+#### Step 4: Video URL Add Karo
+
+**Request:**
+```bash
+curl -X POST http://localhost:5000/api/admin/tmdb-movie/video \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "tmdbId": 550,
+    "title": "Fight Club",
+    "videoUrl": "https://example.com/movies/fight-club.mp4",
+    "hlsUrl": "https://example.com/movies/fight-club.m3u8"
+  }'
+```
+
+**Testing ke liye sample video:**
+```json
+{
+  "tmdbId": 278,
+  "title": "Test Movie",
+  "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+}
+```
+
+#### Step 5: App Mein Check Karo
+
+1. Mobile app restart karo (optional)
+2. Wo movie open karo jiska video URL add kiya
+3. **Green "Play Full Movie" button** dikhega! 🎉
+4. Button click karo → Full movie play hoga
+
+### 🛠️ Useful Scripts
+
+#### Add Test Movies
+```bash
+node add-test-movies.js
+```
+
+#### Verify Movies
+```bash
+node verify-movies.js
+```
+
+### 📝 TMDB API Details
+
+#### 1. Add/Update TMDB Movie Video URL
+**Endpoint:** `POST /api/admin/tmdb-movie/video`
+
+**Request Body:**
+```json
+{
+  "tmdbId": 550,
+  "title": "Fight Club",
+  "videoUrl": "https://example.com/movies/fight-club.mp4",
+  "hlsUrl": "https://example.com/movies/fight-club.m3u8",
+  "source": "external"
+}
+```
+
+**Fields:**
+- `tmdbId` (required): TMDB movie ID (number)
+- `title` (optional): Movie ka naam
+- `videoUrl` (required): Full movie ka direct video URL (MP4, etc.)
+- `hlsUrl` (optional): HLS streaming URL agar available ho
+- `source` (optional): "cloudinary", "external", ya "other" (default: "external")
+
+#### 2. Get All TMDB Movies with Videos
+**Endpoint:** `GET /api/admin/tmdb-movies`
+
+**Response:**
+```json
+[
+  {
+    "_id": "...",
+    "tmdbId": 550,
+    "title": "Fight Club",
+    "videoUrl": "https://example.com/movies/fight-club.mp4",
+    "hasFullMovie": true
+  }
+]
+```
+
+#### 3. Delete TMDB Movie Video
+**Endpoint:** `DELETE /api/admin/tmdb-movie/:id`
+
+**Parameters:**
+- `id`: MongoDB document ID (not TMDB ID)
+
+#### 4. Check Movie Details
+**Endpoint:** `GET /api/movies/tmdb/:tmdbId`
+
+**Response:**
+```json
+{
+  "id": 550,
+  "title": "Fight Club",
+  "hasFullMovie": true,
+  "videoUrl": "https://...",
+  ...
+}
+```
+
+---
+
+## 📊 API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `GET /api/auth/me` - Get current user (protected)
+
+### Movies
+- `GET /api/movies` - Get all movies
+- `GET /api/movies/:id` - Get movie by ID
+- `GET /api/movies/tmdb/:tmdbId` - Get TMDB movie details
+- `POST /api/movies` - Create movie (admin only)
+
+### Admin - TMDB Full Movies
+- `POST /api/admin/tmdb-movie/video` - Add/Update video URL
+- `GET /api/admin/tmdb-movies` - Get all TMDB movies with videos
+- `DELETE /api/admin/tmdb-movie/:id` - Delete video URL
+
+### Admin - General
+- `POST /api/admin/upload` - Upload movie (admin only)
+- `DELETE /api/admin/movies/:id` - Delete movie (admin only)
+
+---
+
+## 🌐 Deployment Guide
 
 ### Recommended Platforms:
 
@@ -119,11 +293,6 @@ Server `http://localhost:5000` par start ho jayega.
 | **Render** | ✅ Yes | ⭐⭐⭐⭐ | Simple setup |
 | **Heroku** | ❌ No | ⭐⭐⭐ | Legacy projects |
 | **DigitalOcean** | ❌ No | ⭐⭐⭐ | Full control |
-| **AWS EC2** | ❌ No | ⭐⭐ | Advanced users |
-
----
-
-## 📝 Step-by-Step Deployment
 
 ### Option 1: Railway (Recommended) 🚂
 
@@ -321,12 +490,18 @@ pm2 monit
 
 ### Issue 1: MongoDB Connection Failed
 
-**Error**: `MongoDB Error: connection timeout`
+**Error**: `MongooseServerSelectionError: Could not connect to any servers`
 
 **Solution**:
-- ✅ MongoDB Atlas me Network Access me `0.0.0.0/0` add karo
+- ✅ **MongoDB Atlas me Network Access me `0.0.0.0/0` add karo** (Ye sabse important hai!)
+  1. MongoDB Atlas dashboard open karo
+  2. Left sidebar me "Network Access" click karo
+  3. "Add IP Address" button click karo
+  4. "Allow Access from Anywhere" select karo ya `0.0.0.0/0` manually enter karo
+  5. Confirm karo aur 1-2 minute wait karo
 - ✅ Connection string me username/password sahi hain ya nahi check karo
 - ✅ Database user me proper permissions hain ya nahi verify karo
+- ✅ Server restart karo
 
 ### Issue 2: Environment Variables Not Loading
 
@@ -356,50 +531,46 @@ pm2 monit
 - ✅ Environment variables me spaces ya quotes nahi hain na
 - ✅ Cloudinary account active hai ya nahi check karo
 
-### Issue 5: Port Already in Use
+### Issue 5: TMDB Button Not Showing
+
+**Error**: Green "Play Full Movie" button nahi dikh raha
+
+**Solution**:
+```bash
+# Check if movie is in database
+node verify-movies.js
+
+# Or check API directly
+curl http://localhost:5000/api/movies/tmdb/278
+# Should show: "hasFullMovie": true
+```
+
+- ✅ Video URL sahi add hua?
+- ✅ App restart karo
+- ✅ Console logs dekho (Player.tsx mein debug info hai)
+
+### Issue 6: Video Not Playing
+
+**Error**: Video play nahi ho raha
+
+**Solution**:
+- ✅ Video URL publicly accessible hai?
+- ✅ Browser mein URL open karke check karo
+- ✅ HLS URL hai to `.m3u8` extension hona chahiye
+- ✅ MP4 URL hai to direct video file honi chahiye
+
+### Issue 7: Port Already in Use
 
 **Error**: `EADDRINUSE: address already in use`
 
 **Solution**:
 ```bash
 # Find process using port 5000
-lsof -i :5000  # Mac/Linux
 netstat -ano | findstr :5000  # Windows
 
 # Kill process
-kill -9 <PID>  # Mac/Linux
 taskkill /PID <PID> /F  # Windows
 ```
-
-### Issue 6: Build Failed on Railway/Render
-
-**Error**: Build timeout or dependency error
-
-**Solution**:
-- ✅ `package.json` me all dependencies properly listed hain
-- ✅ Node.js version compatible hai
-- ✅ Build logs check karo for specific errors
-- ✅ Try: `npm ci` instead of `npm install`
-
----
-
-## 📊 API Endpoints
-
-Deployment ke baad yeh endpoints available honge:
-
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `GET /api/auth/me` - Get current user (protected)
-
-### Movies
-- `GET /api/movies` - Get all movies
-- `GET /api/movies/:id` - Get movie by ID
-- `POST /api/movies` - Create movie (admin only)
-
-### Admin
-- `POST /api/admin/upload` - Upload movie (admin only)
-- `DELETE /api/admin/movies/:id` - Delete movie (admin only)
 
 ---
 
@@ -411,6 +582,7 @@ Deployment ke baad yeh endpoints available honge:
 4. **Rate Limiting**: Production me rate limiting add karo
 5. **HTTPS**: Always HTTPS use karo production me
 6. **MongoDB**: Database user ko minimal permissions do
+7. **IP Whitelist**: Production me specific IPs whitelist karo (development me `0.0.0.0/0` OK hai)
 
 ---
 
@@ -421,23 +593,70 @@ Deployment ke baad yeh endpoints available honge:
 - [Railway Documentation](https://docs.railway.app)
 - [Render Documentation](https://render.com/docs)
 - [PM2 Documentation](https://pm2.keymetrics.io/docs/)
+- [TMDB API](https://www.themoviedb.org/documentation/api)
 
 ---
 
-## ✅ Deployment Checklist
+## 📦 Postman Collection
+
+Testing ke liye Postman collection available hai:
+- File: `TMDB_Movie_API.postman_collection.json`
+- Import karke directly use kar sakte ho
+- Sabhi endpoints pre-configured hain
+
+---
+
+## ✅ Setup Checklist
 
 - [ ] MongoDB Atlas account setup
+- [ ] MongoDB Network Access me `0.0.0.0/0` added
 - [ ] Cloudinary account setup
 - [ ] Environment variables configured
 - [ ] CORS updated with frontend/mobile URLs
 - [ ] Backend deployed successfully
 - [ ] API endpoints tested
+- [ ] TMDB video URLs added
+- [ ] "Play Full Movie" button working
 - [ ] Logs monitoring setup
 - [ ] Frontend & Mobile apps updated with backend URL
 
 ---
 
+## 🎉 Quick Test
+
+**Complete flow test karne ke liye:**
+
+1. **Server start karo:**
+   ```bash
+   npm start
+   ```
+
+2. **Login karo:**
+   ```bash
+   curl -X POST http://localhost:5000/api/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"email":"test@test.com","password":"password123"}'
+   ```
+
+3. **Test video add karo:**
+   ```bash
+   curl -X POST http://localhost:5000/api/admin/tmdb-movie/video \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     -d '{
+       "tmdbId": 278,
+       "title": "Test Movie",
+       "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+     }'
+   ```
+
+4. **App mein check karo:**
+   - TMDB ID 278 wali movie open karo
+   - Green "Play Full Movie" button dikhega! 🎬
+
+---
+
 **Backend URL**: `https://your-backend-url.com`  
-**Status**: ✅ Deployed & Running
+**Status**: ✅ Ready to Deploy
 
 *Koi bhi issue ho to GitHub Issues me post karein!*
